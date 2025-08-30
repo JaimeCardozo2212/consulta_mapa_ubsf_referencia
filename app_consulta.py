@@ -1,4 +1,4 @@
-# app_consulta.py (VERSÃO PARA DEPLOY)
+# app_consulta.py (VERSÃO COM MAIS INFORMAÇÕES)
 
 import os
 import streamlit as st
@@ -10,13 +10,23 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from time import sleep
 
-# --- LÓGICA DO SELENIUM (IGUAL A ANTERIOR) ---
+# --- LÓGICA DO SELENIUM (MODIFICADA PARA RETORNAR MAIS DADOS) ---
 
+### ALTERAÇÃO 1: A função agora busca mais campos e retorna um dicionário ###
 def buscar_unidade(navegador, endereco):
-    # ... (Esta função continua exatamente a mesma do código anterior)
-    unidade_encontrada = "Não foi possível encontrar a unidade."
-    
+    """
+    Função que realiza a busca do endereço no mapa e retorna um dicionário
+    com os dados da unidade de saúde (unidade, distrito, informações).
+    """
+    # Inicializa um dicionário com os valores padrão
+    dados_encontrados = {
+        'unidade': "Não foi possível encontrar a unidade.",
+        'distrito': "Não informado",
+        'info': "Não informada"
+    }
+
     try:
+        # Tenta voltar para a tela inicial de pesquisa
         try:
             voltar_pesquisa = navegador.find_element(By.XPATH, '//*[@id="searchPanel"]/div/div/div[1]/div[1]/div/span/span/span')
             voltar_pesquisa.click()
@@ -24,6 +34,7 @@ def buscar_unidade(navegador, endereco):
         except:
             pass
 
+        # Realiza a busca
         clicar_pesquisa = navegador.find_element(By.XPATH, '//*[@id="legendPanel"]/div/div/div[1]/div[4]/div')
         clicar_pesquisa.click()
         sleep(0.8)
@@ -39,10 +50,30 @@ def buscar_unidade(navegador, endereco):
         ActionChains(navegador).move_to_element(ponteiro_mapa).move_by_offset(5, 0).click().perform()
         sleep(1.5)
 
+        # Extrai o nome da unidade
         unidade = navegador.find_element(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[1]/div[2]').text
         if unidade:
-            unidade_encontrada = unidade
+            dados_encontrados['unidade'] = unidade
 
+        # TENTA EXTRAIR O DISTRITO
+        try:
+            distrito = navegador.find_element(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[2]/div[2]').text
+            if distrito:
+                dados_encontrados['distrito'] = distrito
+        except Exception:
+            # Se não encontrar, mantém o valor padrão "Não informado"
+            pass
+
+        # TENTA EXTRAIR AS INFORMAÇÕES ADICIONAIS
+        try:
+            info_adicional = navegador.find_element(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[3]/div[2]').text
+            if info_adicional:
+                dados_encontrados['info'] = info_adicional
+        except Exception:
+            # Se não encontrar, mantém o valor padrão "Não informada"
+            pass
+
+        # Clica para voltar da tela de detalhes
         voltar_detalhes = navegador.find_element(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div/span/span/span')
         voltar_detalhes.click()
         sleep(0.5)
@@ -54,35 +85,33 @@ def buscar_unidade(navegador, endereco):
         except:
             pass
             
-    return unidade_encontrada
+    # Retorna o dicionário completo com os dados
+    return dados_encontrados
 
-# --- CONFIGURAÇÃO DO NAVEGADOR (MODIFICADA PARA DEPLOY) ---
+
+# --- CONFIGURAÇÃO DO NAVEGADOR (NÃO PRECISA MUDAR) ---
 
 @st.cache_resource
 def get_driver():
-    """
-    Inicia o WebDriver do Selenium para o ambiente do Streamlit Cloud.
-    """
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # OBRIGATÓRIO para rodar no Streamlit Cloud
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     
-    # O Selenium já encontra o chromedriver instalado via packages.txt
     service = Service()
     
     try:
         navegador = webdriver.Chrome(service=service, options=chrome_options)
         navegador.get('https://www.google.com/maps/d/u/0/viewer?mid=1NgDrl6I4Alzy1DAjM3WBDTuELO0r1YI&ll=-26.271590317094045%2C-48.931617999999986&z=11')
-        sleep(5)  # Espera a página carregar
+        sleep(5)
         return navegador
     except Exception as e:
         st.error(f"Não foi possível iniciar o navegador. Verifique os logs. Erro: {e}")
         return None
 
-# --- INTERFACE DO APLICATIVO STREAMLIT (IGUAL A ANTERIOR) ---
+# --- INTERFACE DO APLICATIVO STREAMLIT ---
 
 st.set_page_config(page_title="Consulta de Unidades", layout="centered")
 
@@ -96,7 +125,7 @@ with col2:
 st.header("Consulta de Unidades de Saúde")
 st.write("Digite um endereço abaixo para encontrar a unidade de saúde de referência.")
 
-endereco_usuario = st.text_input("Digite o endereço completo:", placeholder="Ex: Rua das Flores, 123, Joinville - SC")
+endereco_usuario = st.text_input("Para uma localização mais precisa após o endereço adicione Joinville", placeholder="Ex: Rua das Flores 123 Joinville")
 
 if st.button("Buscar Unidade"):
     if not endereco_usuario:
@@ -105,14 +134,23 @@ if st.button("Buscar Unidade"):
         with st.spinner("Inicializando o navegador e realizando a busca... Isso pode levar um momento."):
             navegador = get_driver()
             if navegador:
-                resultado = buscar_unidade(navegador, endereco_usuario)
+                ### ALTERAÇÃO 2: A interface agora recebe o dicionário e exibe os novos campos ###
+                dados_ubsf = buscar_unidade(navegador, endereco_usuario)
                 
-                if "Não foi possível" in resultado:
-                    st.error(f"**Resultado:** {resultado}")
+                # Verifica se a busca principal falhou
+                if "Não foi possível" in dados_ubsf['unidade']:
+                    st.error(f"**Resultado:** {dados_ubsf['unidade']}")
                 else:
                     st.success("Busca concluída com sucesso!")
-                    st.subheader("Unidade de Referência Encontrada:")
-                    st.metric(label="Nome da Unidade", value=resultado)
+                    st.subheader("Informações da Unidade de Referência:")
+                    
+                    # Exibe os resultados de forma organizada
+                    st.metric(label="Nome da Unidade", value=dados_ubsf['unidade'])
+                    st.metric(label="Distrito", value=dados_ubsf['distrito'])
+                    
+                    st.markdown("**Mais Informações:**")
+                    st.info(dados_ubsf['info'])
+
 
 st.markdown("---")
-st.write("© 2025 Inova Saúde - Todos os direitos reservados")
+st.write("© 2025 SES - Inova - Todos os direitos reservados")
