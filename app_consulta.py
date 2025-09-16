@@ -102,7 +102,7 @@ def buscar_unidade(navegador, endereco):
 @st.cache_resource
 def get_driver():
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
@@ -149,7 +149,7 @@ def get_driver():
 
         return navegador
     except Exception as e:
-        st.error(f"Não foi possível iniciar o navegador. recarregue a página e tente novamente.")
+        st.error(f"Não foi possível iniciar o navegador. recarregue a página e tente novamente//.")
         print(f"Erro ao iniciar o navegador: {e}")
         return None
     
