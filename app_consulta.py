@@ -115,7 +115,7 @@ def get_driver():
         navegador.get('https://geo.joinville.sc.gov.br/portal/apps/simgeo/index.html?id=0e2ffa64f4254dda952757813efb6565')
         sleep(5)
         wait = WebDriverWait(navegador, 30)
-        print("Configurando mapa...")
+        st.info("Configurando mapa...")
         lista_de_camadas = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="themes_PlateauTheme_widgets_HeaderController_Widget_20"]/div[2]/div[5]/div[1]')))
         sleep(1)
         lista_de_camadas.click()
