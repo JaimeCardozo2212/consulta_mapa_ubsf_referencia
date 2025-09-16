@@ -127,27 +127,34 @@ def get_driver():
         checkbox_desabilitar = wait.until(EC.presence_of_element_located((By.ID, 'jimu_dijit_CheckBox_12')))
         sleep(1)
         checkbox_desabilitar.click()
+        st.info("desabilitado combobox")
         checkbox_desabilitar = wait.until(EC.presence_of_element_located((By.ID, 'jimu_dijit_CheckBox_21')))
         sleep(1)
         checkbox_desabilitar.click()
+        st.info("desabilitado combobox")
         checkbox_ubsf = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="jimu_dijit_CheckBox_103"]/div[1]')))
         sleep(1)
         checkbox_ubsf.click()
+        st.info("abilitar ubsf")
         checkbox_expand = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="dijit__TemplatedMixin_2"]/table/tbody[1]/tr[17]/td[1]/div[1]')))
         sleep(1)
         checkbox_expand.click()
+        st.info("abilitar ubsf")
         tres_pontos = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="dijit__TemplatedMixin_2"]/table/tbody[1]/tr[18]/td/table/tr[3]/td[3]/div')))
         sleep(1)
         tres_pontos.click()
+        st.info("3 pontos")
         sleep(2)
         habilitar_poupup = navegador.find_element(By.XPATH, '//div[text()="Habilitar pop-up"]')
         if habilitar_poupup:
             habilitar_poupup.click()
+            st.info("clicou poupup")
         else:
             pass
         sleep(1)
         fechar_confg = navegador.find_element(By.CSS_SELECTOR, 'div[aria-label="Pesquisa"]')
         fechar_confg.click()
+        st.info("clicou pesquisa")
 
         return navegador
     except Exception as e:
